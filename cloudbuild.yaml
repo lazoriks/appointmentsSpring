@@ -1,12 +1,23 @@
 steps:
-  - name: 'gcr.io/cloud-builders/mvn'
-    args: ['clean', 'package']
-
+  # 1. Build docker image
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/$PROJECT_ID/appointmentspring', '.']
+    args: ['build', '-t', 'gcr.io/keen-ascent-465022-s5/appointmentspring:$SHORT_SHA', '.']
 
+  # 2. Push docker image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/appointmentspring']
+    args: ['push', 'gcr.io/keen-ascent-465022-s5/appointmentspring:$SHORT_SHA']
+
+  # 3. Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      [
+        'run', 'deploy', 'appointmentspring',
+        '--image', 'gcr.io/keen-ascent-465022-s5/appointmentspring:$SHORT_SHA',
+        '--region', 'us-central1',
+        '--platform', 'managed',
+        '--allow-unauthenticated'
+      ]
 
 images:
-  - 'gcr.io/$PROJECT_ID/appointmentspring'
+  - 'gcr.io/keen-ascent-465022-s5/appointmentspring:$SHORT_SHA'
