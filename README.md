@@ -37,6 +37,23 @@ spring.jpa.properties.hibernate.format_sql=${SPRING_JPA_PROPERTIES_HIBERNATE_FOR
 ### Let Render control the port
 server.port=${PORT:8080}
 
+Ти можеш виконувати всі ці команди просто у звичайному Windows Terminal (cmd, PowerShell або Windows Terminal), якщо:
+
+✅ у тебе встановлені:
+
+docker (і працює docker --version)
+
+gcloud (Google Cloud SDK, і працює gcloud --version)
+
+⚡️ Типово
+🖥 Використовують PowerShell або Windows Terminal, бо вони зручніші для копіювання команд.
+
+⚙️ Якщо у тебе немає gcloud або docker
+Docker Desktop 👉 https://www.docker.com/products/docker-desktop/
+
+Google Cloud SDK 👉 https://cloud.google.com/sdk/docs/install
+
+
 ## deploy and biuid dockerfile
 docker build -t gcr.io/keen-ascent-465022-s5/appointmentspring:latest .
 
