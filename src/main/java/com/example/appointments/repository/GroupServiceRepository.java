@@ -13,8 +13,10 @@ public interface GroupServiceRepository extends JpaRepository<GroupService, Inte
     //@Query("SELECT DISTINCT new map(g.groupId as id, g.groupName as name) FROM GroupService g")
     //List<Map<String, Object>> findDistinctGroups();
 
-    @Query("SELECT DISTINCT new map(g.id as id, g.groupName as name) FROM GroupService g")
-    List<Map<String, Object>> findDistinctGroups();
+    //@Query("SELECT DISTINCT new map(g.id as id, g.groupName as name) FROM GroupService g")
+    //List<Map<String, Object>> findDistinctGroups();
+
+    List<GroupService> findAll();
 
     List<GroupService> findByGroupId(Integer id);
 }

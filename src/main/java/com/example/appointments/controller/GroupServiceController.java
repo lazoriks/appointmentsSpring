@@ -1,5 +1,6 @@
 package com.example.appointments.controller;
 
+import com.example.appointments.dto.GroupServiceShortDTO;
 import com.example.appointments.entity.GroupService;
 import com.example.appointments.repository.GroupServiceRepository;
 import org.springframework.web.bind.annotation.*;
@@ -23,8 +24,10 @@ public class GroupServiceController {
 
     // Отримати унікальні групи (group_id + group_name)
     @GetMapping("/list")
-    public List<Map<String, Object>> groupList() {
-        return repo.findDistinctGroups();
+    public List<GroupServiceShortDTO> getGroupsShort() {
+        return repo.findAll().stream()
+                .map(g -> new GroupServiceShortDTO(g.getId(), g.getGroupName()))
+                .toList();
     }
 
     // Отримати послуги по конкретній групі
