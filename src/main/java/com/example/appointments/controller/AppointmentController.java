@@ -1,13 +1,17 @@
 package com.example.appointments.controller;
 
+import com.example.appointments.dto.AppointmentCreateDto;
 import com.example.appointments.dto.AppointmentInfoDto;
 import com.example.appointments.dto.AvailableDayDto;
 import com.example.appointments.entity.Appointment;
 import com.example.appointments.entity.Client;
+import com.example.appointments.entity.Master;
 import com.example.appointments.entity.Service;
 import com.example.appointments.repository.AppointmentRepository;
 import com.example.appointments.repository.ClientRepository;
 import com.example.appointments.repository.ServiceRepository;
+import com.example.appointments.repository.MasterRepository;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.*;
@@ -22,13 +26,15 @@ public class AppointmentController {
     private final AppointmentRepository repo;
     private final ClientRepository clientRepo;
     private final ServiceRepository serviceRepo;
+    private final MasterRepository masterRepo;
 
     public AppointmentController(AppointmentRepository repo,
                                  ClientRepository clientRepo,
-                                 ServiceRepository serviceRepo) {
+                                 ServiceRepository serviceRepo, MasterRepository masterRepo) {
         this.repo = repo;
         this.clientRepo = clientRepo;
         this.serviceRepo = serviceRepo;
+        this.masterRepo = masterRepo;
     }
 
     @GetMapping("/filter")
@@ -49,20 +55,35 @@ public class AppointmentController {
     }
 
     @PostMapping
-    public Appointment createAppointment(@RequestBody Appointment newAppointment) {
-        Service service = serviceRepo.findById(newAppointment.getService().getId())
+    public ResponseEntity<String> createAppointment(@RequestBody AppointmentCreateDto dto) {
+        // Знайти сервіс
+        Service service = serviceRepo.findById(dto.getServiceId())
                 .orElseThrow(() -> new RuntimeException("Service not found"));
 
-        Client client = clientRepo.findById(newAppointment.getClient().getId())
-                .orElseThrow(() -> new RuntimeException("Client not found"));
+        // Знайти майстра
+        Master master = masterRepo.findById(dto.getMasterId())
+                .orElseThrow(() -> new RuntimeException("Master not found"));
 
+        // Знайти або створити клієнта по mobile
+        Optional<Client> optionalClient = clientRepo.findByMobile(dto.getClientMobile());
+        Client client = optionalClient.orElseGet(() -> {
+            Client c = new Client();
+            c.setFirstName(dto.getClientName());
+            c.setMobile(dto.getClientMobile());
+            c.setEmail(dto.getClientEmail());
+            return clientRepo.save(c);
+        });
+
+        // Створити запис
         Appointment appointment = new Appointment();
-        appointment.setDatatime(newAppointment.getDatatime());
+        appointment.setDatatime(LocalDateTime.parse(dto.getDatetime()));
         appointment.setService(service);
+        appointment.setMaster(master);
         appointment.setClient(client);
-        appointment.setMaster(newAppointment.getMaster()); // don't forget master
 
-        return repo.save(appointment);
+        repo.save(appointment);
+
+        return ResponseEntity.ok("Appointment created successfully");
     }
 
     @GetMapping("/available")

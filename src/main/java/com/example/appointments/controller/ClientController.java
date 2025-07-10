@@ -25,13 +25,13 @@ public class ClientController {
         return repo.findAll();
     }
 
-    // GET with params to find client by first_name + mobile
+    // GET with params to find client by  mobile
     @GetMapping("/search")
     public Map<String, Object> findClientByFirstNameAndMobile(
-            @RequestParam("first_name") String firstName,
+            //@RequestParam("first_name") String firstName,
             @RequestParam("mobile") String mobile) {
 
-        return repo.findByFirstNameAndMobile(firstName, mobile)
+        return repo.findByMobile(mobile)
                 .map(client -> {
                     Map<String, Object> result = new HashMap<>();
                     result.put("id", client.getId());
@@ -51,8 +51,8 @@ public class ClientController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
 
-        // check for duplicate by firstName + mobile
-        return repo.findByFirstNameAndMobile(newClient.getFirstName(), newClient.getMobile())
+        // check for duplicate by mobile
+        return repo.findByMobile(newClient.getMobile())
                 .map(existingClient -> {
                     response.put("id", existingClient.getId());
                     response.put("message", "Client already exists");
