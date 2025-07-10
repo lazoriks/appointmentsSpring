@@ -23,4 +23,8 @@ public class Appointment {
     @ManyToOne
     @JoinColumn(name = "client_id")
     private Client client;
+
+    @ManyToOne
+    @JoinColumn(name = "master_id")
+    private Master master;
 }
