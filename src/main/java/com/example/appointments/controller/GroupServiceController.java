@@ -31,9 +31,14 @@ public class GroupServiceController {
     }
 
     // Отримати послуги по конкретній групі
-    @GetMapping("/{groupId}/services")
-    public List<GroupService> servicesByGroup(@PathVariable Integer groupId) {
-        return repo.findByGroupId(groupId);
+//    @GetMapping("/{groupId}/services")
+//    public List<GroupService> servicesByGroup(@PathVariable Integer groupId) {
+//        return repo.findByGroupId(groupId);
+//    }
+    @GetMapping("/{id}")
+    public GroupService getGroup(@PathVariable Integer id) {
+        return repo.findById(id).orElseThrow(() -> new RuntimeException("Group not found"));
     }
+
 }
 

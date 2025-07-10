@@ -18,5 +18,5 @@ public interface GroupServiceRepository extends JpaRepository<GroupService, Inte
 
     List<GroupService> findAll();
 
-    List<GroupService> findByGroupId(Integer id);
+    //List<GroupService> findByGroupId(Integer id);
 }
