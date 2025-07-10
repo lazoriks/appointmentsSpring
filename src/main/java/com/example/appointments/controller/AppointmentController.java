@@ -18,9 +18,9 @@ import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@CrossOrigin(origins = "https://glamlimerick.com")
 @RestController
 @RequestMapping("/api/appointments")
-@CrossOrigin(origins = "*")
 public class AppointmentController {
 
     private final AppointmentRepository repo;

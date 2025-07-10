@@ -10,6 +10,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/groups")
+@CrossOrigin(origins = "https://glamlimerick.com")
 public class GroupServiceController {
     private final GroupServiceRepository repo;
 
