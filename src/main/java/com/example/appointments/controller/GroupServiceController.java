@@ -23,7 +23,7 @@ public class GroupServiceController {
         return repo.findAll();
     }
 
-    // Отримати унікальні групи (group_id + group_name)
+    // (group_id + group_name)
     @GetMapping("/list")
     public List<GroupServiceShortDTO> getGroupsShort() {
         return repo.findAll().stream()
@@ -31,11 +31,6 @@ public class GroupServiceController {
                 .toList();
     }
 
-    // Отримати послуги по конкретній групі
-//    @GetMapping("/{groupId}/services")
-//    public List<GroupService> servicesByGroup(@PathVariable Integer groupId) {
-//        return repo.findByGroupId(groupId);
-//    }
     @GetMapping("/{id}")
     public GroupService getGroup(@PathVariable Integer id) {
         return repo.findById(id).orElseThrow(() -> new RuntimeException("Group not found"));
