@@ -30,7 +30,8 @@ public class ServiceController {
                         s.getId(),
                         s.getServiceName(),
                         s.getPrice(),
-                        s.getPeriod()
+                        s.getPeriod(),
+                        s.getDescription()
                 ))
                 .toList();
     }
@@ -43,7 +44,8 @@ public class ServiceController {
                         s.getId(),
                         s.getServiceName(),
                         s.getPrice(),
-                        s.getPeriod()
+                        s.getPeriod(),
+                        s.getDescription()
                 ))
                 .toList();
     }

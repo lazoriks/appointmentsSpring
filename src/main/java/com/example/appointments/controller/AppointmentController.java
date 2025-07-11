@@ -1,97 +1,81 @@
 package com.example.appointments.controller;
 
 import com.example.appointments.dto.AppointmentCreateDto;
-import com.example.appointments.dto.AppointmentInfoDto;
 import com.example.appointments.dto.AvailableDayDto;
-import com.example.appointments.entity.Appointment;
-import com.example.appointments.entity.Client;
-import com.example.appointments.entity.Master;
-import com.example.appointments.entity.Service;
-import com.example.appointments.repository.AppointmentRepository;
-import com.example.appointments.repository.ClientRepository;
-import com.example.appointments.repository.ServiceRepository;
-import com.example.appointments.repository.MasterRepository;
-import org.springframework.http.ResponseEntity;
+import com.example.appointments.entity.*;
+import com.example.appointments.repository.*;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@CrossOrigin(origins = "https://glamlimerick.com")
 @RestController
 @RequestMapping("/api/appointments")
+@CrossOrigin(origins = "https://glamlimerick.com")
 public class AppointmentController {
 
-    private final AppointmentRepository repo;
+    private final AppointmentRepository appointmentRepo;
     private final ClientRepository clientRepo;
     private final ServiceRepository serviceRepo;
-    private final MasterRepository masterRepo;
 
-    public AppointmentController(AppointmentRepository repo,
+    public AppointmentController(AppointmentRepository appointmentRepo,
                                  ClientRepository clientRepo,
-                                 ServiceRepository serviceRepo, MasterRepository masterRepo) {
-        this.repo = repo;
+                                 ServiceRepository serviceRepo) {
+        this.appointmentRepo = appointmentRepo;
         this.clientRepo = clientRepo;
         this.serviceRepo = serviceRepo;
-        this.masterRepo = masterRepo;
     }
 
-    @GetMapping("/filter")
-    public List<AppointmentInfoDto> getAppointmentsByDateAndService(
-            @RequestParam("datatime") String datatimeStr,
-            @RequestParam("service_id") Integer serviceId) {
-        LocalDateTime datatime = LocalDateTime.parse(datatimeStr);
-
-        return repo.findByDatatimeAndService_Id(datatime, serviceId).stream()
-                .map(a -> new AppointmentInfoDto(
-                        a.getId(),
-                        a.getClient().getId(),
-                        a.getClient().getFirstName(),
-                        a.getClient().getMobile(),
-                        a.getService().getId()
-                ))
-                .collect(Collectors.toList());
-    }
-
+    // Створення нового запису
     @PostMapping
-    public ResponseEntity<String> createAppointment(@RequestBody AppointmentCreateDto dto) {
-        // Знайти сервіс
-        Service service = serviceRepo.findById(dto.getServiceId())
-                .orElseThrow(() -> new RuntimeException("Service not found"));
+    public Appointment createAppointment(@RequestBody AppointmentCreateDto dto) {
+        LocalDateTime dt = LocalDateTime.parse(dto.getDatetime());
 
-        // Знайти майстра
-        Master master = masterRepo.findById(dto.getMasterId())
-                .orElseThrow(() -> new RuntimeException("Master not found"));
+        Client client = clientRepo.findByMobile(dto.getClientMobile())
+                .orElseGet(() -> {
+                    Client newClient = new Client();
+                    newClient.setFirstName(dto.getClientName());
+                    newClient.setMobile(dto.getClientMobile());
+                    newClient.setEmail(dto.getClientEmail());
+                    return clientRepo.save(newClient);
+                });
 
-        // Знайти або створити клієнта по mobile
-        Optional<Client> optionalClient = clientRepo.findByMobile(dto.getClientMobile());
-        Client client = optionalClient.orElseGet(() -> {
-            Client c = new Client();
-            c.setFirstName(dto.getClientName());
-            c.setMobile(dto.getClientMobile());
-            c.setEmail(dto.getClientEmail());
-            return clientRepo.save(c);
-        });
+        Master master = new Master();
+        master.setId(dto.getMasterId());
 
-        // Створити запис
+        List<Service> services = serviceRepo.findAllById(dto.getServiceIds());
+        BigDecimal total = services.stream()
+                .map(s -> BigDecimal.valueOf(s.getPrice()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        Service mainService = serviceRepo.findById(dto.getServiceId())
+                .orElseThrow(() -> new RuntimeException("Main service not found"));
+
         Appointment appointment = new Appointment();
-        appointment.setDatatime(LocalDateTime.parse(dto.getDatetime()));
-        appointment.setService(service);
-        appointment.setMaster(master);
+        appointment.setDatatime(dt);
         appointment.setClient(client);
+        appointment.setMaster(master);
+        appointment.setService(mainService); // старе поле
+        appointment.setServices(services);   // список
+        appointment.setSumm(total);
 
-        repo.save(appointment);
-
-        return ResponseEntity.ok("Appointment created successfully");
+        return appointmentRepo.save(appointment);
     }
 
+    // Пошук вільних слотів
     @GetMapping("/available")
-    public List<AvailableDayDto> getAvailableSlots(@RequestParam("masterId") Integer masterId) {
+    public List<AvailableDayDto> getAvailableSlots(
+            @RequestParam("masterId") Integer masterId,
+            @RequestParam("serviceIds") List<Integer> serviceIds
+    ) {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime endDate = now.plusDays(7).withHour(23).withMinute(59);
 
-        List<Appointment> existing = repo.findByMasterIdAndDatatimeBetween(masterId, now, endDate);
+        List<Appointment> existing = appointmentRepo.findConflictingAppointments(
+                masterId, now, endDate, serviceIds
+        );
 
         Set<String> bookedSlots = existing.stream()
                 .map(a -> a.getDatatime().toLocalDate() + "T" + a.getDatatime().toLocalTime().withSecond(0).withNano(0))
