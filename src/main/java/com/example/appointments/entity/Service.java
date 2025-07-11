@@ -23,4 +23,7 @@ public class Service {
 
     @Column(name = "qty_masters")
     private Integer qtyMasters;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
 }
