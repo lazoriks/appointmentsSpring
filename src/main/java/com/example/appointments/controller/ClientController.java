@@ -12,7 +12,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/clients")
-@CrossOrigin(origins = "https://glamlimerick.com")
+@CrossOrigin(origins = { "https://glamlimerick.com", "http://localhost:3000" })
 public class ClientController {
     private final ClientRepository repo;
 

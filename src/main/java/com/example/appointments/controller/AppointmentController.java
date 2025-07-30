@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/appointments")
-@CrossOrigin(origins = "https://glamlimerick.com")
+@CrossOrigin(origins = { "https://glamlimerick.com", "http://localhost:3000" })
 public class AppointmentController {
 
     private final AppointmentRepository appointmentRepo;
