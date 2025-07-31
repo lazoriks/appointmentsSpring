@@ -42,6 +42,7 @@ public class AppointmentController {
                     newClient.setSurname(dto.getClientSurname());
                     newClient.setMobile(dto.getClientMobile());
                     newClient.setEmail(dto.getClientEmail());
+                    newClient.setGoogleId(dto.getGoogleId());
                     return clientRepo.save(newClient);
                 });
 

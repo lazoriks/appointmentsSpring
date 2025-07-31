@@ -21,4 +21,7 @@ public class Client {
     private String mobile;
 
     private String email;
+
+    @Column(name = "google_id", unique = true)
+    private String googleId;
 }

@@ -16,4 +16,6 @@ public class AppointmentCreateDto {
     private String clientSurname;
     private String clientMobile;
     private String clientEmail;
+
+    private String googleId;
 }
