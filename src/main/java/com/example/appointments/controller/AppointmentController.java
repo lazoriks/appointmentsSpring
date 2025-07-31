@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.*;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -69,18 +70,15 @@ public class AppointmentController {
     // Пошук вільних слотів
     @GetMapping("/available")
     public List<AvailableDayDto> getAvailableSlots(
-            @RequestParam("masterId") Integer masterId,
-            @RequestParam("serviceIds") List<Integer> serviceIds
+            @RequestParam("masterId") Integer masterId
     ) {
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime endDate = now.plusDays(7).withHour(23).withMinute(59);
+        LocalDateTime endDate = now.plusDays(30).withHour(23).withMinute(59);
 
-        List<Appointment> existing = appointmentRepo.findConflictingAppointments(
-                masterId, now, endDate, serviceIds
-        );
+        List<Appointment> existing = appointmentRepo.findByMasterIdAndDatatimeBetween(masterId, now, endDate);
 
         Set<String> bookedSlots = existing.stream()
-                .map(a -> a.getDatatime().toLocalDate() + "T" + a.getDatatime().toLocalTime().withSecond(0).withNano(0))
+                .map(a -> a.getDatatime().truncatedTo(ChronoUnit.MINUTES).toString())
                 .collect(Collectors.toSet());
 
         List<AvailableDayDto> result = new ArrayList<>();
@@ -100,8 +98,8 @@ public class AppointmentController {
 
             for (int hour = startHour; hour < endHour; hour++) {
                 for (int min = 0; min < 60; min += 30) {
-                    LocalDateTime slot = date.atTime(hour, min);
-                    String slotKey = slot.toLocalDate() + "T" + slot.toLocalTime().withSecond(0).withNano(0);
+                    LocalDateTime slot = date.atTime(hour, min).withSecond(0).withNano(0);
+                    String slotKey = slot.truncatedTo(ChronoUnit.MINUTES).toString();
                     if (!bookedSlots.contains(slotKey)) {
                         availableTimes.add(String.format("%02d:%02d", hour, min));
                     }
@@ -115,4 +113,5 @@ public class AppointmentController {
 
         return result;
     }
+
 }

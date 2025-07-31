@@ -22,4 +22,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
             @Param("end") LocalDateTime end,
             @Param("serviceIds") List<Integer> serviceIds
     );
+
+    List<Appointment> findByMasterIdAndDatatimeBetween(Integer masterId, LocalDateTime now, LocalDateTime endDate);
 }
