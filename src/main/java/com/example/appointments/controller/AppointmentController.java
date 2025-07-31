@@ -84,7 +84,7 @@ public class AppointmentController {
 
         List<AvailableDayDto> result = new ArrayList<>();
 
-        for (int i = 0; i < 7; i++) {
+        for (int i = 0; i < 30; i++) {
             LocalDate date = now.toLocalDate().plusDays(i);
             DayOfWeek dow = date.getDayOfWeek();
 
