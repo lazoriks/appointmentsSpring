@@ -98,7 +98,7 @@ public class AppointmentController {
             List<String> availableTimes = new ArrayList<>();
 
             for (int hour = startHour; hour < endHour; hour++) {
-                for (int min = 0; min < 60; min += 15) {
+                for (int min = 0; min < 60; min += 30) {
                     LocalDateTime slot = date.atTime(hour, min);
                     String slotKey = slot.toLocalDate() + "T" + slot.toLocalTime().withSecond(0).withNano(0);
                     if (!bookedSlots.contains(slotKey)) {
