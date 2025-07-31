@@ -14,6 +14,7 @@ public class Client {
     @Column(name = "first_name")
     private String firstName;
 
+    @Column(name = "surname")
     private String surname;
 
     @Column(nullable = false)

@@ -13,6 +13,7 @@ public class AppointmentCreateDto {
     private Integer masterId;
 
     private String clientName;
+    private String clientSurname;
     private String clientMobile;
     private String clientEmail;
 }

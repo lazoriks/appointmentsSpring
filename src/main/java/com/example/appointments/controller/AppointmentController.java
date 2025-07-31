@@ -37,6 +37,7 @@ public class AppointmentController {
                 .orElseGet(() -> {
                     Client newClient = new Client();
                     newClient.setFirstName(dto.getClientName());
+                    newClient.setSurname(dto.getClientSurname());
                     newClient.setMobile(dto.getClientMobile());
                     newClient.setEmail(dto.getClientEmail());
                     return clientRepo.save(newClient);
