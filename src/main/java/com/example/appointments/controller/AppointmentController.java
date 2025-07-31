@@ -31,7 +31,8 @@ public class AppointmentController {
     // Створення нового запису
     @PostMapping
     public Appointment createAppointment(@RequestBody AppointmentCreateDto dto) {
-        LocalDateTime dt = LocalDateTime.parse(dto.getDatetime());
+        //LocalDateTime dt = LocalDateTime.parse(dto.getDatetime());
+        LocalDateTime dt = LocalDateTime.parse(dto.getDatetime()).withSecond(0).withNano(0);
 
         Client client = clientRepo.findByMobile(dto.getClientMobile())
                 .orElseGet(() -> {
