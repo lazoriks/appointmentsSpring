@@ -22,6 +22,6 @@ public class Client {
 
     private String email;
 
-    @Column(name = "google_id", unique = true)
+    @Column(name = "google_id")
     private String googleId;
 }
