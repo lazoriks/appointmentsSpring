@@ -65,6 +65,9 @@ public class AppointmentController {
         appointment.setServices(services);   // список
         appointment.setSumm(total);
 
+        System.out.println("DTO: " + dto);
+        System.out.println("Parsed datetime: " + dt);
+
         return appointmentRepo.save(appointment);
     }
 
