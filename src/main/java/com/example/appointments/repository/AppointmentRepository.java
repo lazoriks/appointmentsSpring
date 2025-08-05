@@ -24,4 +24,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
     );
 
     List<Appointment> findByMasterIdAndDatatimeBetween(Integer masterId, LocalDateTime now, LocalDateTime endDate);
+
+    // 🔽 Додай цей метод
+    List<Appointment> findByDatatimeBetween(LocalDateTime from, LocalDateTime to);
 }
