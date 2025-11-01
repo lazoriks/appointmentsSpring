@@ -46,6 +46,19 @@ public class AdminController {
         return appointmentRepo.findByDatatimeBetween(start, end);
     }
 
+    // ✅ ДОДАНО: створення / редагування Appointment
+    @PostMapping("/appointments")
+    public Appointment saveAppointment(@RequestBody Appointment appointment) {
+        // якщо appointment.id == null → створить новий, інакше оновить існуючий
+        return appointmentRepo.save(appointment);
+    }
+
+    // ✅ ДОДАНО: видалення Appointment
+    @DeleteMapping("/appointments/{id}")
+    public void deleteAppointment(@PathVariable Integer id) {
+        appointmentRepo.deleteById(id);
+    }
+
     // --- SERVICES ---
     @GetMapping("/services")
     public List<Service> getAllServices() {
