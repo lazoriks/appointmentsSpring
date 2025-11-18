@@ -20,21 +20,30 @@ public class AppointmentController {
     private final AppointmentRepository appointmentRepo;
     private final ClientRepository clientRepo;
     private final ServiceRepository serviceRepo;
+    private final HolidayRepository holidayRepo;
 
     public AppointmentController(AppointmentRepository appointmentRepo,
                                  ClientRepository clientRepo,
-                                 ServiceRepository serviceRepo) {
+                                 ServiceRepository serviceRepo,
+                                 HolidayRepository holidayRepo) {
         this.appointmentRepo = appointmentRepo;
         this.clientRepo = clientRepo;
         this.serviceRepo = serviceRepo;
+        this.holidayRepo = holidayRepo;
     }
 
-    // Створення нового запису
+    // ------------------------
+    // CREATE APPOINTMENT
+    // ------------------------
     @PostMapping
     public Appointment createAppointment(@RequestBody AppointmentCreateDto dto) {
-        //LocalDateTime dt = LocalDateTime.parse(dto.getDatetime());
-        LocalDateTime dt = LocalDateTime.parse(dto.getDatetime()).withSecond(0).withNano(0);
 
+        LocalDateTime dt = LocalDateTime
+                .parse(dto.getDatetime())
+                .withSecond(0)
+                .withNano(0);
+
+        // ----- CLIENT -----
         Client client = clientRepo.findByMobile(dto.getClientMobile())
                 .orElseGet(() -> {
                     Client newClient = new Client();
@@ -46,9 +55,11 @@ public class AppointmentController {
                     return clientRepo.save(newClient);
                 });
 
+        // ----- MASTER (reference only) -----
         Master master = new Master();
         master.setId(dto.getMasterId());
 
+        // ----- SERVICES -----
         List<Service> services = serviceRepo.findAllById(dto.getServiceIds());
         BigDecimal total = services.stream()
                 .map(s -> BigDecimal.valueOf(s.getPrice()))
@@ -57,21 +68,33 @@ public class AppointmentController {
         Service mainService = serviceRepo.findById(dto.getServiceId())
                 .orElseThrow(() -> new RuntimeException("Main service not found"));
 
+        // ----- SAVE -----
         Appointment appointment = new Appointment();
         appointment.setDatatime(dt);
         appointment.setClient(client);
         appointment.setMaster(master);
-        appointment.setService(mainService); // старе поле
-        appointment.setServices(services);   // список
+        appointment.setService(mainService);     // old single field
+        appointment.setServices(services);       // list of services
         appointment.setSumm(total);
-
-        System.out.println("DTO: " + dto);
-        System.out.println("Parsed datetime: " + dt);
 
         return appointmentRepo.save(appointment);
     }
 
-    // Пошук вільних слотів
+    // ------------------------
+    // CHECK IF DATE IS HOLIDAY
+    // ------------------------
+    private boolean isHoliday(LocalDate date, List<Holiday> holidays) {
+        for (Holiday h : holidays) {
+            if (!date.isBefore(h.getStartDate()) && !date.isAfter(h.getFinishDate())) {
+                return true;    // date is inside holiday
+            }
+        }
+        return false;
+    }
+
+    // ------------------------
+    // AVAILABLE SLOTS
+    // ------------------------
     @GetMapping("/available")
     public List<AvailableDayDto> getAvailableSlots(
             @RequestParam("masterId") Integer masterId
@@ -79,19 +102,30 @@ public class AppointmentController {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime endDate = now.plusDays(30).withHour(23).withMinute(59);
 
-        List<Appointment> existing = appointmentRepo.findByMasterIdAndDatatimeBetween(masterId, now, endDate);
+        // EXISTING APPOINTMENTS
+        List<Appointment> existing = appointmentRepo
+                .findByMasterIdAndDatatimeBetween(masterId, now, endDate);
 
         Set<String> bookedSlots = existing.stream()
                 .map(a -> a.getDatatime().truncatedTo(ChronoUnit.MINUTES).toString())
                 .collect(Collectors.toSet());
 
+        // HOLIDAYS OF THIS MASTER
+        List<Holiday> holidays = holidayRepo.findByMasterId(masterId);
+
         List<AvailableDayDto> result = new ArrayList<>();
 
         for (int i = 0; i < 30; i++) {
             LocalDate date = now.toLocalDate().plusDays(i);
-            DayOfWeek dow = date.getDayOfWeek();
 
+            // SKIP HOLIDAYS FOR CLIENTS
+            if (isHoliday(date, holidays)) {
+                continue;
+            }
+
+            DayOfWeek dow = date.getDayOfWeek();
             int startHour, endHour;
+
             switch (dow) {
                 case SUNDAY -> { startHour = 11; endHour = 16; }
                 case SATURDAY -> { startHour = 9; endHour = 17; }
@@ -102,8 +136,11 @@ public class AppointmentController {
 
             for (int hour = startHour; hour < endHour; hour++) {
                 for (int min = 0; min < 60; min += 30) {
+
                     LocalDateTime slot = date.atTime(hour, min).withSecond(0).withNano(0);
+
                     String slotKey = slot.truncatedTo(ChronoUnit.MINUTES).toString();
+
                     if (!bookedSlots.contains(slotKey)) {
                         availableTimes.add(String.format("%02d:%02d", hour, min));
                     }

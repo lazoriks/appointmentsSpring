@@ -11,4 +11,7 @@ import java.util.List;
 public class AvailableDayDto {
     private LocalDate date;
     private List<String> times;
+
+    public AvailableDayDto(LocalDate date, List<String> availableTimes) {
+    }
 }

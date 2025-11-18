@@ -1,5 +1,6 @@
 package com.example.appointments.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -32,4 +33,8 @@ public class Master {
             inverseJoinColumns = @JoinColumn(name = "service_id")
     )
     private List<Service> services;
+
+    @OneToMany(mappedBy = "master", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<Holiday> holidays;
 }
