@@ -3,6 +3,8 @@ package com.example.appointments.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "db_clients")
 @Data
@@ -24,4 +26,12 @@ public class Client {
 
     @Column(name = "google_id")
     private String googleId;
+
+    @Column(name = "date_created")
+    private LocalDateTime dateCreated;
+
+    @PrePersist
+    protected void onCreate() {
+        this.dateCreated = LocalDateTime.now();
+    }
 }

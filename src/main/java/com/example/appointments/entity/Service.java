@@ -3,6 +3,8 @@ package com.example.appointments.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.util.List;
+
 @Entity
 @Table(name = "db_service")
 @Data
@@ -26,4 +28,8 @@ public class Service {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @ManyToMany(mappedBy = "services")
+    private List<Master> masters;
+
 }

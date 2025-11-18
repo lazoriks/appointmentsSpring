@@ -3,6 +3,8 @@ package com.example.appointments.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 @AllArgsConstructor
 public class AppointmentInfoDto {
@@ -11,4 +13,5 @@ public class AppointmentInfoDto {
     private String clientFirstName;
     private String clientMobile;
     private Integer serviceId;
+    private LocalDateTime dateCreated;
 }

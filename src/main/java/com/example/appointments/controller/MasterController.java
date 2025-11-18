@@ -40,4 +40,19 @@ public class MasterController {
                 ))
                 .toList();
     }
+
+    @GetMapping("/service/{serviceId}")
+    public List<Master> getByService(@PathVariable Integer serviceId) {
+        return repo.findByServicesId(serviceId);
+    }
+
+    @GetMapping("/service/{serviceId}/short")
+    public List<MasterShortDTO> getShortByService(@PathVariable Integer serviceId) {
+        return repo.findByServicesId(serviceId).stream()
+                .map(m -> new MasterShortDTO(
+                        m.getId(),
+                        m.getFirstName() + " " + m.getSurname()
+                ))
+                .toList();
+    }
 }

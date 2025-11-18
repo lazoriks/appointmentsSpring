@@ -8,5 +8,6 @@ import java.util.List;
 
 public interface MasterRepository extends JpaRepository<Master, Integer> {
     List<Master> findByGroupServiceId(Integer groupId);
+    List<Master> findByServicesId(Integer serviceId);   // ← додано
 }
 

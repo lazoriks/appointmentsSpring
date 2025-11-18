@@ -1,13 +1,7 @@
 package com.example.appointments.controller;
 
-import com.example.appointments.entity.Appointment;
-import com.example.appointments.entity.Client;
-import com.example.appointments.entity.Master;
-import com.example.appointments.entity.Service;
-import com.example.appointments.repository.AppointmentRepository;
-import com.example.appointments.repository.ClientRepository;
-import com.example.appointments.repository.MasterRepository;
-import com.example.appointments.repository.ServiceRepository;
+import com.example.appointments.entity.*;
+import com.example.appointments.repository.*;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,15 +18,18 @@ public class AdminController {
     private final ServiceRepository serviceRepo;
     private final MasterRepository masterRepo;
     private final ClientRepository clientRepo;
+    private final GroupServiceRepository groupServiceRepo;
 
     public AdminController(AppointmentRepository appointmentRepo,
                            ServiceRepository serviceRepo,
                            MasterRepository masterRepo,
-                           ClientRepository clientRepo) {
+                           ClientRepository clientRepo,
+                           GroupServiceRepository groupServiceRepo) {
         this.appointmentRepo = appointmentRepo;
         this.serviceRepo = serviceRepo;
         this.masterRepo = masterRepo;
         this.clientRepo = clientRepo;
+        this.groupServiceRepo = groupServiceRepo;
     }
 
     // --- APPOINTMENTS ---
@@ -100,5 +97,16 @@ public class AdminController {
     @DeleteMapping("/clients/{id}")
     public void deleteClient(@PathVariable Integer id) {
         clientRepo.deleteById(id);
+    }
+
+    // --- groups ---
+    @PostMapping("/groups")
+    public GroupService saveGroup(@RequestBody GroupService group) {
+        return groupServiceRepo.save(group);
+    }
+
+    @DeleteMapping("/groups/{id}")
+    public void deleteGroup(@PathVariable Integer id) {
+        groupServiceRepo.deleteById(id);
     }
 }

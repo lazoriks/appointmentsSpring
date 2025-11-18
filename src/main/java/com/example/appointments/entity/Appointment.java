@@ -40,4 +40,12 @@ public class Appointment {
 
     @Column(precision = 10, scale = 2)
     private BigDecimal summ;
+
+    @Column(name = "date_created")
+    private LocalDateTime dateCreated;
+
+    @PrePersist
+    protected void onCreate() {
+        this.dateCreated = LocalDateTime.now();
+    }
 }
