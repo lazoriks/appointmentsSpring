@@ -99,6 +99,13 @@ public class AdminController {
         clientRepo.deleteById(id);
     }
 
+    // NEW: Get all appointments for a specific client
+    @GetMapping("/clients/{id}/appointments")
+    public List<Appointment> getClientAppointments(@PathVariable Integer id) {
+        return appointmentRepo
+                .findByClientIdOrderByDatatimeDesc(id);
+    }
+
     // --- groups ---
     @PostMapping("/groups")
     public GroupService saveGroup(@RequestBody GroupService group) {

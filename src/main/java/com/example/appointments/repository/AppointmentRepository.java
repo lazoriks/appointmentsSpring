@@ -27,4 +27,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
 
     // 🔽 Додай цей метод
     List<Appointment> findByDatatimeBetween(LocalDateTime from, LocalDateTime to);
+
+    // NEW
+    List<Appointment> findByClientIdOrderByDatatimeDesc(Integer clientId);
 }
