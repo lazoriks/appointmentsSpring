@@ -4,7 +4,6 @@ import com.example.appointments.entity.*;
 import com.example.appointments.repository.*;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
