@@ -106,6 +106,17 @@ public class AdminController {
     }
 
     // --- groups ---
+    @GetMapping("/groups")
+    public List<GroupService> getAllGroups() {
+        return groupServiceRepo.findAll();
+    }
+
+    @GetMapping("/groups/{id}")
+    public GroupService getGroup(@PathVariable Integer id) {
+        return groupServiceRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Group not found with id: " + id));
+    }
+
     @PostMapping("/groups")
     public GroupService saveGroup(@RequestBody GroupService group) {
         return groupServiceRepo.save(group);
