@@ -7,11 +7,12 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Data
-@AllArgsConstructor
 public class AvailableDayDto {
     private LocalDate date;
     private List<String> times;
 
     public AvailableDayDto(LocalDate date, List<String> availableTimes) {
+        this.date = date;
+        this.times = availableTimes;
     }
 }
