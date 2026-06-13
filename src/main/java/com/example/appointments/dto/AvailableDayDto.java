@@ -1,6 +1,6 @@
 package com.example.appointments.dto;
 
-import lombok.AllArgsConstructor;
+// import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.time.LocalDate;

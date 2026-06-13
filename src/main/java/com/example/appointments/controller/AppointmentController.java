@@ -4,6 +4,7 @@ import com.example.appointments.dto.AppointmentCreateDto;
 import com.example.appointments.dto.AvailableDayDto;
 import com.example.appointments.entity.*;
 import com.example.appointments.repository.*;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -36,6 +37,10 @@ public class AppointmentController {
     // CREATE APPOINTMENT
     // ------------------------
     @PostMapping
+    @Transactional(
+        rollbackFor = Exception.class,
+        timeout = 5
+    )
     public Appointment createAppointment(@RequestBody AppointmentCreateDto dto) {
 
         LocalDateTime dt = LocalDateTime
@@ -96,6 +101,7 @@ public class AppointmentController {
     // AVAILABLE SLOTS
     // ------------------------
     @GetMapping("/available")
+    @Transactional(readOnly = true)
     public List<AvailableDayDto> getAvailableSlots(
             @RequestParam("masterId") Integer masterId
     ) {
