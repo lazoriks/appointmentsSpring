@@ -3,14 +3,15 @@ package com.example.appointments.controller;
 import com.example.appointments.entity.*;
 import com.example.appointments.repository.*;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin")
-@CrossOrigin(origins = { "https://glamlimerick.com", "http://localhost:3000" })
 public class AdminController {
 
     private final AppointmentRepository appointmentRepo;
@@ -114,7 +115,7 @@ public class AdminController {
     @GetMapping("/groups/{id}")
     public GroupService getGroup(@PathVariable Integer id) {
         return groupServiceRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Group not found with id: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found with id: " + id));
     }
 
     @PostMapping("/groups")

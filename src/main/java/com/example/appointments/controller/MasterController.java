@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@CrossOrigin(origins = { "https://glamlimerick.com", "http://localhost:3000" })
 @RestController
 @RequestMapping("/api/masters")
 public class MasterController {
@@ -34,10 +33,7 @@ public class MasterController {
     @GetMapping("/group/{groupId}/short")
     public List<MasterShortDTO> getShortByGroup(@PathVariable Integer groupId) {
         return repo.findByGroupServiceId(groupId).stream()
-                .map(m -> new MasterShortDTO(
-                        m.getId(),
-                        m.getFirstName() + " " + m.getSurname()
-                ))
+                .map(MasterController::toShortDto)
                 .toList();
     }
 
@@ -49,10 +45,11 @@ public class MasterController {
     @GetMapping("/service/{serviceId}/short")
     public List<MasterShortDTO> getShortByService(@PathVariable Integer serviceId) {
         return repo.findByServicesId(serviceId).stream()
-                .map(m -> new MasterShortDTO(
-                        m.getId(),
-                        m.getFirstName() + " " + m.getSurname()
-                ))
+                .map(MasterController::toShortDto)
                 .toList();
+    }
+
+    private static MasterShortDTO toShortDto(Master m) {
+        return new MasterShortDTO(m.getId(), m.getFirstName() + " " + m.getSurname());
     }
 }

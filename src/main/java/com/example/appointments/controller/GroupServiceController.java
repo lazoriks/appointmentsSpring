@@ -3,14 +3,14 @@ package com.example.appointments.controller;
 import com.example.appointments.dto.GroupServiceShortDTO;
 import com.example.appointments.entity.GroupService;
 import com.example.appointments.repository.GroupServiceRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-// import java.util.Map;
 
 @RestController
 @RequestMapping("/api/groups")
-@CrossOrigin(origins = { "https://glamlimerick.com", "http://localhost:3000" })
 public class GroupServiceController {
     private final GroupServiceRepository repo;
 
@@ -33,7 +33,8 @@ public class GroupServiceController {
 
     @GetMapping("/{id}")
     public GroupService getGroup(@PathVariable Integer id) {
-        return repo.findById(id).orElseThrow(() -> new RuntimeException("Group not found"));
+        return repo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found"));
     }
 
 }

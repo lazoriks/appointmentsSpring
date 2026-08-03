@@ -5,15 +5,17 @@ import com.example.appointments.entity.Holiday;
 import com.example.appointments.entity.Master;
 import com.example.appointments.repository.HolidayRepository;
 import com.example.appointments.repository.MasterRepository;
+import jakarta.validation.Valid;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/holidays")
-@CrossOrigin(origins = { "https://glamlimerick.com", "http://localhost:3000" })
 public class HolidayController {
 
     private final HolidayRepository holidays;
@@ -35,14 +37,21 @@ public class HolidayController {
     }
 
     @PostMapping
-    public Holiday create(@RequestBody HolidayCreateDto dto) {
+    public Holiday create(@Valid @RequestBody HolidayCreateDto dto) {
         Master master = masters.findById(dto.masterId)
-                .orElseThrow(() -> new RuntimeException("Master not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Master not found"));
+
+        LocalDate startDate = LocalDate.parse(dto.startDate);
+        LocalDate finishDate = LocalDate.parse(dto.finishDate);
+
+        if (finishDate.isBefore(startDate)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "finishDate cannot be before startDate");
+        }
 
         Holiday h = new Holiday();
         h.setMaster(master);
-        h.setStartDate(LocalDate.parse(dto.startDate));
-        h.setFinishDate(LocalDate.parse(dto.finishDate));
+        h.setStartDate(startDate);
+        h.setFinishDate(finishDate);
 
         return holidays.save(h);
     }

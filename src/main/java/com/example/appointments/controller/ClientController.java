@@ -12,7 +12,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/clients")
-@CrossOrigin(origins = { "https://glamlimerick.com", "http://localhost:3000" })
 public class ClientController {
     private final ClientRepository repo;
 
@@ -25,11 +24,9 @@ public class ClientController {
         return repo.findAll();
     }
 
-    // GET with params to find client by  mobile
+    // GET with params to find client by mobile
     @GetMapping("/search")
-    public Map<String, Object> findClientByFirstNameAndMobile(
-            //@RequestParam("first_name") String firstName,
-            @RequestParam("mobile") String mobile) {
+    public Map<String, Object> findClientByMobile(@RequestParam("mobile") String mobile) {
 
         return repo.findByMobile(mobile)
                 .map(client -> {
