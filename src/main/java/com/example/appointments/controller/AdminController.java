@@ -43,6 +43,12 @@ public class AdminController {
         return appointmentRepo.findByDatatimeBetween(start, end);
     }
 
+    @GetMapping("/appointments/{id}")
+    public Appointment getAppointment(@PathVariable Integer id) {
+        return appointmentRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found with id: " + id));
+    }
+
     // ✅ ДОДАНО: створення / редагування Appointment
     @PostMapping("/appointments")
     public Appointment saveAppointment(@RequestBody Appointment appointment) {
