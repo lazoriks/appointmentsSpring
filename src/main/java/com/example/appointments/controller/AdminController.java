@@ -62,6 +62,12 @@ public class AdminController {
         return serviceRepo.findAll();
     }
 
+    @GetMapping("/services/{id}")
+    public Service getService(@PathVariable Integer id) {
+        return serviceRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Service not found with id: " + id));
+    }
+
     @PostMapping("/services")
     public Service saveService(@RequestBody Service service) {
         return serviceRepo.save(service);
@@ -78,6 +84,12 @@ public class AdminController {
         return masterRepo.findAll();
     }
 
+    @GetMapping("/masters/{id}")
+    public Master getMaster(@PathVariable Integer id) {
+        return masterRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Master not found with id: " + id));
+    }
+
     @PostMapping("/masters")
     public Master saveMaster(@RequestBody Master master) {
         return masterRepo.save(master);
@@ -92,6 +104,17 @@ public class AdminController {
     @GetMapping("/clients")
     public List<Client> getAllClients() {
         return clientRepo.findAll();
+    }
+
+    @GetMapping("/clients/{id}")
+    public Client getClient(@PathVariable Integer id) {
+        return clientRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found with id: " + id));
+    }
+
+    @PostMapping("/clients")
+    public Client saveClient(@RequestBody Client client) {
+        return clientRepo.save(client);
     }
 
     @DeleteMapping("/clients/{id}")
