@@ -14,7 +14,7 @@ steps:
       [
         'run', 'deploy', 'appointmentspring',
         '--image', 'gcr.io/keen-ascent-465022-s5/appointmentspring:$SHORT_SHA',
-        '--region', 'us-central1',
+        '--region', 'europe-north1',
         '--platform', 'managed',
         '--allow-unauthenticated'
       ]
