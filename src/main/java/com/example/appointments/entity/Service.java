@@ -1,5 +1,6 @@
 package com.example.appointments.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -29,6 +30,10 @@ public class Service {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    // Never serialized: fetching it lazily for every row in the admin
+    // services list means N+1 cross-region queries (Cloud Run us-central1
+    // <-> RDS eu-north-1) and no frontend code reads this field anyway.
+    @JsonIgnore
     @ManyToMany(mappedBy = "services")
     private List<Master> masters;
 
