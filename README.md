@@ -70,6 +70,23 @@ Full CRUD for appointments, services, masters, clients, and groups (`GET`/`POST`
 ### `/api/auth/login` — admin login
 `POST /api/auth/login` with `{ "username": "...", "password": "..." }`, checked against `ADMIN_USERNAME`/`ADMIN_PASSWORD`. On success returns `{ "apiKey": "<ADMIN_API_KEY>" }` for the frontend to store and send as `X-Admin-Key` on subsequent admin requests — so the human-facing credential is a normal username/password, not the raw key. See [`AuthController`](src/main/java/com/example/appointments/controller/AuthController.java).
 
+## Problems & Solutions
+
+### 1. N+1 queries made admin list endpoints slow (~13s for 89 services)
+
+**Problem:** `GET /api/admin/services` took ~13 seconds to return 89 rows. `Service.masters` is a lazy `@ManyToMany`; Jackson touching it while serializing every row fired one extra query per service. Each of those was a round trip from the Cloud Run backend (then `us-central1`) to the RDS database (`eu-north-1`) — 89 unnecessary cross-region queries for data no frontend even reads.
+
+**Solution:**
+- [`Service.masters`](src/main/java/com/example/appointments/entity/Service.java) is never used by any frontend, so it's now `@JsonIgnore`'d — the extra query disappears entirely for this field.
+- [`Master.services`](src/main/java/com/example/appointments/entity/Master.java) and [`Appointment.services`](src/main/java/com/example/appointments/entity/Appointment.java) *are* used (master-edit's service checklist, an appointment's booked-services list), so they can't be dropped the same way — added `@BatchSize(50)` instead, turning N+1 lazy loads into ~1 batched `IN (...)` query per list load.
+- Combined with moving the region to `europe-north1` (see [Deployment](#deployment)), `GET /api/admin/services` went from ~13.4s to ~0.6s.
+
+### 2. Double-booking race condition
+
+**Problem:** Two clients booking the same master for an overlapping slot at the same moment could both pass the "is this slot free?" check before either write committed, creating two appointments for the same master at the same time.
+
+**Solution:** `POST /api/appointments` runs in a `@Transactional` block and loads the master's same-day appointments via [`AppointmentRepository.lockByMasterIdAndDatatimeBetween`](src/main/java/com/example/appointments/repository/AppointmentRepository.java), which uses `@Lock(LockModeType.PESSIMISTIC_WRITE)` — a `SELECT ... FOR UPDATE` that locks those rows for the transaction's duration. A concurrent request for the same master/day blocks until the first transaction commits or rolls back, so it always sees the just-created booking when it re-checks for overlap and correctly gets rejected with `409 Conflict` instead of racing past the check.
+
 ## Known issues / in progress
 
 - `AdminController`'s entity-bound endpoints (`saveAppointment`, `saveService`, `saveMaster`, `saveGroup`) bind raw JPA entities directly from the request body (mass assignment) — a caller can set fields like `id` that shouldn't be client-controlled.
@@ -85,10 +102,6 @@ Full CRUD for appointments, services, masters, clients, and groups (`GET`/`POST`
 - "Not found" lookups (`master`, `service`, `group`) now throw `ResponseStatusException` directly → proper `404` instead of a generic `RuntimeException`/`500`
 
 Note: `AdminController`'s entity-bound endpoints (`saveAppointment`, `saveService`, `saveMaster`, `saveGroup`) still accept raw JPA entities as the request body and are not yet covered by DTO-level validation.
-
-### Booking conflict detection
-
-`POST /api/appointments` checks for overlapping bookings for the same master before saving: it compares the new appointment's `[start, start + total service duration]` window against the master's existing appointments for that day, and rejects the request with `409 Conflict` if they overlap. The conflict query also takes a pessimistic write lock on the master's same-day appointments for the duration of the transaction, so two concurrent booking requests can't both slip past the check (see [`AppointmentRepository.lockByMasterIdAndDatatimeBetween`](src/main/java/com/example/appointments/repository/AppointmentRepository.java)).
 
 ## Git workflow
 
