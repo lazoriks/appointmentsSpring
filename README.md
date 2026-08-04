@@ -67,6 +67,9 @@ Full CRUD for appointments, services, masters, clients, and groups (`GET`/`POST`
 
 > 🔒 **Protected.** Every request under `/api/admin/**` must include the header `X-Admin-Key: <ADMIN_API_KEY>`. Requests without a matching key get `401 Unauthorized`. See [`AdminApiKeyFilter`](src/main/java/com/example/appointments/security/AdminApiKeyFilter.java).
 
+### `/api/auth/login` — admin login
+`POST /api/auth/login` with `{ "username": "...", "password": "..." }`, checked against `ADMIN_USERNAME`/`ADMIN_PASSWORD`. On success returns `{ "apiKey": "<ADMIN_API_KEY>" }` for the frontend to store and send as `X-Admin-Key` on subsequent admin requests — so the human-facing credential is a normal username/password, not the raw key. See [`AuthController`](src/main/java/com/example/appointments/controller/AuthController.java).
+
 ## Known issues / in progress
 
 - `AdminController`'s entity-bound endpoints (`saveAppointment`, `saveService`, `saveMaster`, `saveGroup`) bind raw JPA entities directly from the request body (mass assignment) — a caller can set fields like `id` that shouldn't be client-controlled.
@@ -162,6 +165,7 @@ In Render (Dashboard → Environment), create these variables:
 | `SPRING_JPA_SHOW_SQL` | `true` |
 | `SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL` | `true` |
 | `ADMIN_API_KEY` | a long random secret — required for `/api/admin/**` (sent as the `X-Admin-Key` header) |
+| `ADMIN_USERNAME` / `ADMIN_PASSWORD` | credentials `POST /api/auth/login` checks before handing back `ADMIN_API_KEY` |
 | `CORS_ALLOWED_ORIGINS` | comma-separated list, e.g. `https://glamlimerick.com,http://localhost:3000` |
 
 ## Deployment
@@ -200,6 +204,6 @@ docker build -t gcr.io/keen-ascent-465022-s5/appointmentspring:latest .
 docker push gcr.io/keen-ascent-465022-s5/appointmentspring:latest
 ```
 
-Production: https://appointmentspring-206160864813.us-central1.run.app/api/clients
+Production: https://appointmentspring-206160864813.europe-north1.run.app/api/clients
 
-Automated deployment is configured via `cloudbuild.yaml` (Cloud Build → Cloud Run, region `us-central1`).
+Automated deployment is configured via `cloudbuild.yaml` (Cloud Build → Cloud Run, region `europe-north1` — chosen to sit next to the RDS database in AWS `eu-north-1` instead of across the Atlantic from it).
