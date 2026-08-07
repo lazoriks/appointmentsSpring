@@ -78,6 +78,48 @@ Uploads are validated: slot must be one of the known 14, type must be JPEG/PNG/W
 ### `/api/auth/login` — admin login
 `POST /api/auth/login` with `{ "username": "...", "password": "..." }`, checked against `ADMIN_USERNAME`/`ADMIN_PASSWORD`. On success returns `{ "apiKey": "<ADMIN_API_KEY>" }` for the frontend to store and send as `X-Admin-Key` on subsequent admin requests — so the human-facing credential is a normal username/password, not the raw key. See [`AuthController`](src/main/java/com/example/appointments/controller/AuthController.java).
 
+## Booking notifications
+
+When a booking is created, three messages go out:
+
+| To | Channel | Contents |
+|---|---|---|
+| The client | Email | Confirmation: date and time, services, beautician, salon address, phone to call for changes |
+| The salon | Email (`SALON_EMAIL`) | Alert with the client's name, mobile, email, services, beautician and total |
+| The salon | Telegram group | The same alert, short form |
+
+**Clients get email rather than Telegram** because a bot can't message someone who hasn't started a chat with it — there's no way to reach a person who just filled in a web form.
+
+### How it's delivered
+
+Sending inline would mean a slow SMTP server delays the customer's booking, and a failing one could fail it outright. Instead this uses a **transactional outbox**:
+
+1. `AppointmentController` saves the appointment and, **in the same transaction**, writes one `notification_outbox` row per message. A booking therefore can't exist without its notifications being queued, and notifications can't be queued for a booking that rolled back.
+2. After the transaction commits, `BookingCreatedListener` tries to deliver them immediately (async, off the request thread), so the salon usually hears within seconds.
+3. Anything that fails — or never runs, because Cloud Run shut the instance down mid-send — stays `PENDING` and is retried by `POST /api/admin/notifications/dispatch`.
+
+That endpoint exists because **Cloud Run scales to zero**: no CPU is scheduled between requests, so a `@Scheduled` method would simply never fire. A **Cloud Scheduler** job (`notifications-dispatch`, `europe-west1`, every 10 minutes) calls it with the `X-Admin-Key` header, which wakes the service and drains the queue.
+
+Each row is sent in its own transaction, records `attempts` and `last_error`, and is marked `FAILED` after 5 tries so a bad address can't be retried forever.
+
+```
+GET  /api/admin/notifications/status    -> {"pending":0,"failed":0}
+POST /api/admin/notifications/dispatch  -> {"sent":2,"stillPending":0,"failed":0}
+```
+
+### Configuration
+
+Every channel is optional — leave its variables blank and that channel is skipped. Bookings keep working either way; the service also starts fine with nothing configured.
+
+| Variable | Notes |
+|---|---|
+| `MAIL_HOST` / `MAIL_PORT` | e.g. `smtp.gmail.com` / `587` |
+| `MAIL_USERNAME` / `MAIL_PASSWORD` | For Gmail this must be an **App Password** (needs 2-Step Verification), not the account password |
+| `SALON_EMAIL` | Where the salon's copy goes |
+| `TELEGRAM_BOT_TOKEN` | From [@BotFather](https://t.me/BotFather) |
+| `TELEGRAM_CHAT_ID` | The salon group's chat id — add the bot to the group, send a message, then read it from `https://api.telegram.org/bot<TOKEN>/getUpdates`. Group ids are negative |
+| `SALON_NAME` / `SALON_ADDRESS` / `SALON_PHONE` | Shown in the messages; sensible defaults are built in |
+
 ## Problems & Solutions
 
 ### 1. N+1 queries made admin list endpoints slow (~13s for 89 services)
@@ -195,6 +237,9 @@ In Render (Dashboard → Environment), create these variables:
 | `ADMIN_API_KEY` | a long random secret — required for `/api/admin/**` (sent as the `X-Admin-Key` header) |
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | credentials `POST /api/auth/login` checks before handing back `ADMIN_API_KEY` |
 | `SITE_IMAGES_BUCKET` | GCS bucket for the home page photos (defaults to `glamlimerick-site-images`) |
+| `MAIL_HOST` / `MAIL_PORT` / `MAIL_USERNAME` / `MAIL_PASSWORD` | SMTP for booking emails — see [Booking notifications](#booking-notifications) |
+| `SALON_EMAIL` | Where the salon's copy of each booking goes |
+| `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | Bot and group chat for booking alerts |
 | `CORS_ALLOWED_ORIGINS` | comma-separated list, e.g. `https://glamlimerick.com,http://localhost:3000` |
 
 ## Deployment
