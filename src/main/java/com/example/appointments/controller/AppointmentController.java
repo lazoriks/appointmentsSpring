@@ -3,8 +3,11 @@ package com.example.appointments.controller;
 import com.example.appointments.dto.AppointmentCreateDto;
 import com.example.appointments.dto.AvailableDayDto;
 import com.example.appointments.entity.*;
+import com.example.appointments.notification.BookingCreatedEvent;
+import com.example.appointments.notification.BookingNotificationService;
 import com.example.appointments.repository.*;
 import jakarta.validation.Valid;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -33,15 +36,21 @@ public class AppointmentController {
     private final ClientRepository clientRepo;
     private final ServiceRepository serviceRepo;
     private final HolidayRepository holidayRepo;
+    private final BookingNotificationService notifications;
+    private final ApplicationEventPublisher events;
 
     public AppointmentController(AppointmentRepository appointmentRepo,
                                  ClientRepository clientRepo,
                                  ServiceRepository serviceRepo,
-                                 HolidayRepository holidayRepo) {
+                                 HolidayRepository holidayRepo,
+                                 BookingNotificationService notifications,
+                                 ApplicationEventPublisher events) {
         this.appointmentRepo = appointmentRepo;
         this.clientRepo = clientRepo;
         this.serviceRepo = serviceRepo;
         this.holidayRepo = holidayRepo;
+        this.notifications = notifications;
+        this.events = events;
     }
 
     // ------------------------
@@ -116,7 +125,17 @@ public class AppointmentController {
         appointment.setServices(services);       // list of services
         appointment.setSumm(total);
 
-        return appointmentRepo.save(appointment);
+        Appointment saved = appointmentRepo.save(appointment);
+
+        // Queue the confirmation/alert messages in the same transaction, then ask
+        // for immediate delivery once it commits. If that delivery never happens,
+        // the rows stay PENDING and the scheduled dispatch picks them up.
+        List<Integer> outboxIds = notifications.queueForNewBooking(saved).stream()
+                .map(NotificationOutbox::getId)
+                .toList();
+        events.publishEvent(new BookingCreatedEvent(saved.getId(), outboxIds));
+
+        return saved;
     }
 
     // ------------------------
