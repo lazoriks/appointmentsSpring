@@ -67,6 +67,14 @@ Full CRUD for appointments, services, masters, clients, and groups (`GET`/`POST`
 
 > 🔒 **Protected.** Every request under `/api/admin/**` must include the header `X-Admin-Key: <ADMIN_API_KEY>`. Requests without a matching key get `401 Unauthorized`. See [`AdminApiKeyFilter`](src/main/java/com/example/appointments/security/AdminApiKeyFilter.java).
 
+### `/api/admin/site-images` — photos shown on the WordPress home page
+- `GET /api/admin/site-images` — the 14 fixed slots (7 category sections × 2 photos) with their permanent public URLs
+- `POST /api/admin/site-images/{slot}` — multipart upload (field name `file`) replacing that slot's photo
+
+The salon manager has no WordPress access, so category photos are served from a public Google Cloud Storage bucket instead of the WP media library. Each slot has a permanent URL (`…/categories/nails-1`) that the home page links to once; an upload overwrites the object behind it, so the page markup never changes. Objects are stored with `Cache-Control: public, max-age=300`, so a replacement appears on the site within about five minutes.
+
+Uploads are validated: slot must be one of the known 14, type must be JPEG/PNG/WebP, size ≤ 5 MB. Being under `/api/admin/**`, they're already covered by `AdminApiKeyFilter`. See [`SiteImageController`](src/main/java/com/example/appointments/controller/SiteImageController.java).
+
 ### `/api/auth/login` — admin login
 `POST /api/auth/login` with `{ "username": "...", "password": "..." }`, checked against `ADMIN_USERNAME`/`ADMIN_PASSWORD`. On success returns `{ "apiKey": "<ADMIN_API_KEY>" }` for the frontend to store and send as `X-Admin-Key` on subsequent admin requests — so the human-facing credential is a normal username/password, not the raw key. See [`AuthController`](src/main/java/com/example/appointments/controller/AuthController.java).
 
@@ -160,9 +168,16 @@ server.port=${PORT:8080}
 ### Admin API key (required header X-Admin-Key on /api/admin/**)
 admin.api-key=${ADMIN_API_KEY:}
 
+### Site photos (uploaded from the admin panel, shown on the WordPress home page)
+app.site-images.bucket=${SITE_IMAGES_BUCKET:glamlimerick-site-images}
+spring.servlet.multipart.max-file-size=5MB
+spring.servlet.multipart.max-request-size=6MB
+
 ### CORS (comma-separated list of allowed origins)
 app.cors.allowed-origins=${CORS_ALLOWED_ORIGINS:https://glamlimerick.com,http://localhost:3000}
 ```
+
+The bucket is `glamlimerick-site-images` (region `europe-north1`, uniform access). `allUsers` has `roles/storage.objectViewer` so the website can read the photos, and the Cloud Run service account has `roles/storage.objectAdmin` so uploads can write them. Authentication uses the runtime's default credentials — no key file.
 
 CORS is configured in a single place ([`CorsGlobalConfig`](src/main/java/com/example/appointments/config/CorsGlobalConfig.java)) for `/api/**`, reading its allowed origins from `app.cors.allowed-origins`. There's no `@CrossOrigin` on individual controllers anymore — add a new frontend origin by updating `CORS_ALLOWED_ORIGINS`, not by editing code.
 
@@ -179,6 +194,7 @@ In Render (Dashboard → Environment), create these variables:
 | `SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL` | `true` |
 | `ADMIN_API_KEY` | a long random secret — required for `/api/admin/**` (sent as the `X-Admin-Key` header) |
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | credentials `POST /api/auth/login` checks before handing back `ADMIN_API_KEY` |
+| `SITE_IMAGES_BUCKET` | GCS bucket for the home page photos (defaults to `glamlimerick-site-images`) |
 | `CORS_ALLOWED_ORIGINS` | comma-separated list, e.g. `https://glamlimerick.com,http://localhost:3000` |
 
 ## Deployment
